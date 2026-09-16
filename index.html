@@ -50,15 +50,33 @@ h1 { font-size:16px; margin:0 0 6px; font-weight:650; }
 .card {
   background:var(--card); border-radius:16px; padding:14px 14px;
   display:flex; flex-direction:column; gap:10px;
+  border:1px solid #334155;
 }
-.qnum { color:var(--muted); font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
+.card.question {
+  background:#243044;
+  border:1px solid #4b6fa8;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+}
+.qnum { color:#8eb6ff; font-size:11px; letter-spacing:.04em; text-transform:uppercase; font-weight:700; }
 .q { font-size:17px; line-height:1.3; font-weight:600; }
 .ans { font-size:15px; line-height:1.35; color:#b8f0d0; }
 .expl { font-size:13px; line-height:1.4; color:var(--muted); }
-.choices { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
-.choice { text-align:left; line-height:1.3; padding:12px 12px; font-size:15px; }
-.choice.correct { background:var(--ok); }
-.choice.wrong { background:var(--bad); opacity:.92; }
+.choices { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+.choice {
+  text-align:left; line-height:1.3; padding:12px 12px 12px 12px; font-size:15px;
+  background:#121821; border:1.5px solid #3d4f66; color:var(--text);
+  display:flex; gap:10px; align-items:flex-start;
+}
+.choice .letter {
+  flex:0 0 auto; width:24px; height:24px; border-radius:8px;
+  background:#2a3a50; color:#c9d7ea; font-size:12px; font-weight:800;
+  display:flex; align-items:center; justify-content:center; margin-top:1px;
+}
+.choice .txt { flex:1; min-width:0; }
+.choice.correct { background:var(--ok); border-color:var(--ok); }
+.choice.correct .letter { background:rgba(0,0,0,.2); color:#fff; }
+.choice.wrong { background:var(--bad); border-color:var(--bad); opacity:.95; }
+.choice.wrong .letter { background:rgba(0,0,0,.2); color:#fff; }
 .choice:disabled { cursor:default; }
 .primary { width:100%; background:var(--accent); min-height:48px; font-size:16px; }
 .empty { background:var(--card); border-radius:16px; padding:20px; text-align:center; color:var(--muted); }
@@ -236,7 +254,7 @@ function renderFlash(c) {
       <span>Left: <b>${Math.max(deck.length-i,0)}</b></span>
       <span>Missed: <b>${missCount()}</b></span>
     </div>
-    <div class="card">
+    <div class="card question">
       <div class="qnum">Question ${c.n} · Flashcards</div>
       <div class="q">${esc(c.q)}</div>
       ${revealed ? `<div class="ans"><b>Answer:</b> ${esc(c.a)}</div><div class="expl">${esc(c.expl||'')}</div>` : ''}
@@ -267,12 +285,12 @@ function renderGame(c) {
       <span>Score: <b>${gameScore.right}</b> / ${gameScore.right+gameScore.wrong}</span>
       <span>Missed: <b>${missCount()}</b></span>
     </div>
-    <div class="card">
+    <div class="card question">
       <div class="qnum">Question ${c.n} · Game</div>
       <div class="q">${esc(c.q)}</div>
     </div>
     <div class="choices" id="choices">
-      ${choices.map((ch,idx)=>`<button class="choice" type="button" data-i="${idx}">${esc(ch)}</button>`).join('')}
+      ${choices.map((ch,idx)=>`<button class="choice" type="button" data-i="${idx}" data-ans="${esc(ch)}"><span class="letter">${'ABCD'[idx]}</span><span class="txt">${esc(ch)}</span></button>`).join('')}
     </div>
     ${lastFeedback ? `<div class="expl" style="margin-top:8px">${lastFeedback}</div>` : ''}`;
   document.getElementById('backHome').onclick = goHome;
@@ -283,11 +301,12 @@ function renderGame(c) {
       btn.onclick = () => {
         if (locked) return;
         locked = true;
-        const pick = btn.textContent;
+        const pick = btn.getAttribute('data-ans');
         const ok = pick === c.a;
         [...document.querySelectorAll('.choice')].forEach(b => {
           b.disabled = true;
-          if (b.textContent === c.a) b.classList.add('correct');
+          const ans = b.getAttribute('data-ans');
+          if (ans === c.a) b.classList.add('correct');
           else if (b === btn && !ok) b.classList.add('wrong');
         });
         if (ok) {
@@ -318,7 +337,7 @@ function renderGame(c) {
     // already answered (re-render path)
     [...document.querySelectorAll('.choice')].forEach(b => {
       b.disabled = true;
-      if (b.textContent === c.a) b.classList.add('correct');
+      if (b.getAttribute('data-ans') === c.a) b.classList.add('correct');
     });
     setDock(`<button class="primary" id="next" type="button">Next</button>`);
     document.getElementById('next').onclick = () => {
